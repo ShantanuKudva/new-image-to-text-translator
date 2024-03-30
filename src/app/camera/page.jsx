@@ -1,33 +1,38 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import Webcam from "react-webcam";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { LanguageSelect } from "@/components/languageSelect";
 import { Toaster, toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
 
-export default function Home() {
-  const [image, setImage] = useState(null);
+const videoConstraints = {
+  width: 540,
+  facingMode: "environment",
+};
+
+const Camera = () => {
+  const webcamRef = useRef(null);
+  const [url, setUrl] = React.useState(null);
   const [fromLang, setFromLang] = useState();
   const [toLang, setToLang] = useState();
   const [response, setResponse] = useState("");
 
-  useEffect(() => {
-    console.log(fromLang, toLang);
-  }, [fromLang, toLang]);
+  const capturePhoto = React.useCallback(async () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setUrl(imageSrc);
+  }, [webcamRef]);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setImage(file);
+  const onUserMedia = (e) => {
+    console.log(e);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!image) {
-      toast.error("Please select an image");
+    if (!url) {
+      toast.error("Please click a picture");
       return;
     }
     if (!fromLang || !toLang) {
@@ -35,7 +40,7 @@ export default function Home() {
       return;
     }
     const formData = new FormData();
-    formData.append("file", image);
+    formData.append("file", url);
     formData.append("fromLang", fromLang);
     formData.append("toLang", toLang);
     fetch("http://localhost:8000/upload", {
@@ -57,43 +62,35 @@ export default function Home() {
       });
   };
 
-  const router = useRouter();
-
-  const handleRedirect = () => {
-    router.push("/camera");
-  };
-
   return (
-    <main suppressHydrationWarning className="p-5">
-      <Toaster richColors position="top-right" duration={1500} />
-      <nav className="flex justify-between items-center">
-        <h1 className="font-bold">Transmania</h1>
-        <div className="flex gap-2">
-          <Button onClick={handleRedirect}>Camera</Button>
+    <>
+      <main suppressHydrationWarning className="p-5">
+        <Toaster richColors position="top-right" duration={1500} />
+        <nav className="flex justify-between items-center">
+          <h1 className="font-bold">Transmania</h1>
           <ModeToggle />
-        </div>
-      </nav>
-      <div className="text-center m-10 grid gap-5">
-        <h1 className="text-3xl font-semibold ml-4">Transmania</h1>
-        <h2>
-          This is a simple Image to Text Translator. You can upload an image and
-          it will convert the text in the image to text.
-        </h2>
-        <form className="grid justify-center gap-10">
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className=""
+        </nav>
+        <div className="text-center m-10 grid gap-5">
+          <h1 className="text-3xl font-semibold ml-4">Click a Pic!</h1>
+          <h2>
+            Use yout camera to click a picture and extract text from it and
+            translate the text for you!
+          </h2>
+          <Webcam
+            ref={webcamRef}
+            audio={true}
+            screenshotFormat="image/jpeg"
+            videoConstraints={videoConstraints}
+            onUserMedia={onUserMedia}
           />
-
-          {image && (
-            <div className="flex justify-center items-center">
-              <img
-                src={URL.createObjectURL(image)}
-                alt="Uploaded Image"
-                className="w-52 object-cover"
-              />
+          <div className="flex gap-2">
+            <Button onClick={capturePhoto}>Capture</Button>
+            <Button onClick={() => setUrl(null)}>Refresh</Button>
+          </div>
+          {url && (
+            <div>
+              {console.log(typeof url)}
+              <img src={url} alt="Screenshot" />
             </div>
           )}
           <h3 className="select the languages"></h3>
@@ -118,16 +115,18 @@ export default function Home() {
           <Button className="w-40 " onClick={handleSubmit}>
             Upload Image
           </Button>
-        </form>
-        {response ? (
-          <div>
+          {response ? (
             <div>
-              <p>The Extracted Text is : {response.data.original_text}</p>
-              <p>The Translated Text is : {response.data.translated_text}</p>
+              <div>
+                <p>The Extracted Text is : {response.data.original_text}</p>
+                <p>The Translated Text is : {response.data.translated_text}</p>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
-    </main>
+          ) : null}
+        </div>
+      </main>
+    </>
   );
-}
+};
+
+export default Camera;
