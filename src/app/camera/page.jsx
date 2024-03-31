@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LanguageSelect } from "@/components/languageSelect";
 import { Toaster, toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 
 const videoConstraints = {
   width: 540,
@@ -19,6 +20,11 @@ const Camera = () => {
   const [fromLang, setFromLang] = useState();
   const [toLang, setToLang] = useState();
   const [response, setResponse] = useState("");
+  const router = useRouter();
+
+  const handleRouteChange = () => {
+    router.push("/");
+  };
 
   const capturePhoto = React.useCallback(async () => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -28,6 +34,8 @@ const Camera = () => {
   const onUserMedia = (e) => {
     console.log(e);
   };
+
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,17 +47,19 @@ const Camera = () => {
       toast.error("Please select the languages");
       return;
     }
+    setLoading(true);
     const formData = new FormData();
     formData.append("file", url);
     formData.append("fromLang", fromLang);
     formData.append("toLang", toLang);
-    fetch("http://localhost:8000/upload", {
+    fetch("http://localhost:8000/camera", {
       method: "POST",
       body: formData,
     })
       .then((res) => res.json())
       .then((data) => {
         setResponse(data);
+        setLoading(false);
         if (data.status === 200)
           toast.success(
             "Image uploaded successfully and text translated successfully"
@@ -58,6 +68,7 @@ const Camera = () => {
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false);
         toast.error("Error uploading image and translating text");
       });
   };
@@ -68,7 +79,10 @@ const Camera = () => {
         <Toaster richColors position="top-right" duration={1500} />
         <nav className="flex justify-between items-center">
           <h1 className="font-bold">Transmania</h1>
-          <ModeToggle />
+          <div className="flex gap-2">
+            <Button onClick={handleRouteChange}>Home</Button>
+            <ModeToggle />
+          </div>
         </nav>
         <div className="text-center m-10 grid gap-5">
           <h1 className="text-3xl font-semibold ml-4">Click a Pic!</h1>
@@ -115,7 +129,8 @@ const Camera = () => {
           <Button className="w-40 " onClick={handleSubmit}>
             Upload Image
           </Button>
-          {response ? (
+          {loading && <p>Loading...</p>}
+          {loadingresponse ? (
             <div>
               <div>
                 <p>The Extracted Text is : {response.data.original_text}</p>
