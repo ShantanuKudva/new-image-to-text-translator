@@ -130,10 +130,10 @@ const Camera = () => {
             Upload Image
           </Button>
           {loading && <p>Loading...</p>}
-          {loadingresponse ? (
+          {!loading && response ? (
             <div>
               <div>
-                <p>The Extracted Text is : {response.data.original_text}</p>
+                <p>The Extracted Text is : {response.data.extracted_text}</p>
                 <p>The Translated Text is : {response.data.translated_text}</p>
               </div>
             </div>
