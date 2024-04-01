@@ -14,6 +14,7 @@ export default function Home() {
   const [fromLang, setFromLang] = useState();
   const [toLang, setToLang] = useState();
   const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     console.log(fromLang, toLang);
@@ -34,6 +35,7 @@ export default function Home() {
       toast.error("Please select the languages");
       return;
     }
+    setLoading(true)
     const formData = new FormData();
     formData.append("file", image);
     formData.append("fromLang", fromLang);
@@ -45,6 +47,7 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         setResponse(data);
+        setLoading(false)
         if (data.status === 200)
           toast.success(
             "Image uploaded successfully and text translated successfully"
@@ -53,6 +56,7 @@ export default function Home() {
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false)
         toast.error("Error uploading image and translating text");
       });
   };
@@ -119,7 +123,8 @@ export default function Home() {
             Upload Image
           </Button>
         </form>
-        {response ? (
+        {loading && <p>loading...</p>}
+        {(!loading && response) ? (
           <div>
             <div>
               <p>The Extracted Text is : {response.data.original_text}</p>
